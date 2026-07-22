@@ -71,45 +71,59 @@ class PriceMonitoringService:
     async def _load_quotes(self, secids: set[str]) -> dict[str, BondQuote]:
         """Загружает котировки MOEX и отбирает валидные по нужным бумагам.
 
-        Котировка берётся с primary-борда бумаги. Бумаги без сделок
-        сегодня (нет цены) или без закрытия предыдущей сессии
-        (новый выпуск) отбрасываются.
+        Бумаги без сделок ни на одном борде (нет цены) или без закрытия
+        предыдущей сессии (новый выпуск) отбрасываются.
         """
         raw_quotes = await fetch_market_data()
         primary_boards = await PortfolioRepository.load_primary_boards(secids)
 
+        by_secid: dict[str, list[RawQuote]] = {}
+        for raw in raw_quotes.values():
+            by_secid.setdefault(raw.secid, []).append(raw)
+
         quotes: dict[str, BondQuote] = {}
-        skipped = 0
+        skipped: list[str] = []
         for secid in secids:
-            quote = self._pick_quote(secid, raw_quotes, primary_boards)
+            quote = self._pick_quote(secid, by_secid.get(secid, []), primary_boards.get(secid))
             if quote is None:
-                skipped += 1
+                skipped.append(secid)
                 continue
             quotes[secid] = quote
 
-        logger.info(f"Валидных котировок: {len(quotes)}, пропущено бумаг: {skipped}")
+        logger.info(f"Валидных котировок: {len(quotes)}, пропущено бумаг: {len(skipped)}")
+        if skipped:
+            logger.info(f"Пропущены (нет валидной котировки ни на одном борде): {skipped}")
         return quotes
 
     def _pick_quote(
         self,
         secid: str,
-        raw_quotes: dict[tuple[str, str], RawQuote],
-        primary_boards: dict[str, str],
+        board_quotes: list[RawQuote],
+        primary_boardid: str | None,
     ) -> BondQuote | None:
-        """Выбирает котировку бумаги с её primary-борда."""
-        boardid = primary_boards.get(secid)
-        if boardid is None:
-            return None
+        """Выбирает лучшую валидную котировку бумаги.
 
-        raw = raw_quotes.get((secid, boardid))
-        if raw is None:
-            return None
-
-        price = raw.price(self._settings.price_field)
-        if price is None or raw.prev_price is None or raw.prev_price <= 0:
-            return None
-
-        return BondQuote(secid=secid, boardid=boardid, price=price, prev_close=raw.prev_price)
+        Приоритет бордов: primary из moex_bonds, затем основные T+
+        (TQ*), затем остальные. Фолбэк нужен, потому что primary_boardid
+        бывает нерабочим: у ОФЗ синк ставит SPOB, где торгов нет, —
+        реальные котировки на TQOB.
+        """
+        ordered = sorted(
+            board_quotes,
+            key=lambda q: (
+                q.boardid != primary_boardid,
+                not q.boardid.startswith("TQ"),
+                q.boardid,
+            ),
+        )
+        for raw in ordered:
+            price = raw.price(self._settings.price_field)
+            if price is None or raw.prev_price is None or raw.prev_price <= 0:
+                continue
+            return BondQuote(
+                secid=secid, boardid=raw.boardid, price=price, prev_close=raw.prev_price
+            )
+        return None
 
     async def _check_user(
         self,
