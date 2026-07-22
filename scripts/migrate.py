@@ -25,13 +25,8 @@ def _normalize_url(url: str) -> str:
     return url.replace("postgresql+asyncpg://", "postgresql://", 1)
 
 
-async def main() -> None:
-    """Применяет все автоматические миграции по порядку."""
-    database_url = os.environ.get("DATABASE_URL")
-    if not database_url:
-        logger.error("DATABASE_URL не задан")
-        sys.exit(1)
-
+async def apply_migrations(database_url: str) -> None:
+    """Применяет все автоматические миграции по порядку. Идемпотентно."""
     sql_files = sorted(
         f for f in MIGRATIONS_DIR.glob("*.sql") if not f.name.startswith("9")
     )
@@ -47,6 +42,15 @@ async def main() -> None:
         logger.info("Миграции применены: %d", len(sql_files))
     finally:
         await conn.close()
+
+
+async def main() -> None:
+    """Точка входа для ручного запуска: берёт DATABASE_URL из окружения."""
+    database_url = os.environ.get("DATABASE_URL")
+    if not database_url:
+        logger.error("DATABASE_URL не задан")
+        sys.exit(1)
+    await apply_migrations(database_url)
 
 
 if __name__ == "__main__":

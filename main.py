@@ -7,6 +7,7 @@ import sys
 from price_monitoring.config import Settings
 from price_monitoring.db import dispose_engine, init_engine
 from price_monitoring.service import PriceMonitoringService
+from scripts.migrate import apply_migrations
 
 logging.basicConfig(
     level=logging.INFO,
@@ -17,6 +18,7 @@ logging.basicConfig(
 async def run() -> None:
     """Инициализирует окружение и выполняет один прогон проверки цен."""
     settings = Settings.from_env()
+    await apply_migrations(settings.database_url)
     init_engine(settings.database_url)
     try:
         await PriceMonitoringService(settings).run_once()
