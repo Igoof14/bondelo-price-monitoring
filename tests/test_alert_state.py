@@ -8,7 +8,7 @@ def _anomaly(alert_type: AlertType, secid: str = "RU000A100001") -> PriceAnomaly
     sign = -1 if alert_type.value.startswith("drop") else 1
     return PriceAnomaly(
         secid=secid,
-        ticker="TEST",
+        isin=secid,
         name="Тестовая облигация",
         price=100.0 + sign * 5,
         prev_close=100.0,

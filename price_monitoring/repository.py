@@ -54,7 +54,7 @@ class PortfolioRepository:
             SELECT DISTINCT
                 bu.telegram_id,
                 mb.secid,
-                COALESCE(mb.shortname, mb.secid) AS ticker,
+                mb.isin,
                 COALESCE(mb.name, mb.shortname, mb.secid) AS name
             FROM user_bonds ub
             JOIN bot_users bu ON bu.id = ub.bot_user_id
@@ -65,9 +65,9 @@ class PortfolioRepository:
         async with session_scope() as session:
             result = await session.execute(query)
             portfolios: dict[int, list[PortfolioBond]] = {}
-            for telegram_id, secid, ticker, name in result:
+            for telegram_id, secid, isin, name in result:
                 portfolios.setdefault(telegram_id, []).append(
-                    PortfolioBond(secid=secid, ticker=ticker, name=name)
+                    PortfolioBond(secid=secid, isin=isin, name=name)
                 )
             return portfolios
 

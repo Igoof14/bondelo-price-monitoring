@@ -6,8 +6,7 @@
         "telegram_id": 123456,
         "alerts": [
             {
-                "secid": "RU000A108EF8",
-                "ticker": "СамолетP12",
+                "isin": "RU000A108EF8",
                 "name": "...",
                 "price_pct": 94.3,
                 "prev_close_pct": 99.5,

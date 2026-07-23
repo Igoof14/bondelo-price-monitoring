@@ -13,7 +13,7 @@ THRESHOLDS = AlertThresholds(
 
 
 def _bond(secid: str = "RU000A100001") -> PortfolioBond:
-    return PortfolioBond(secid=secid, ticker="TEST", name="Тестовая облигация")
+    return PortfolioBond(secid=secid, isin=secid, name="Тестовая облигация")
 
 
 def _quote(price: float, prev_close: float = 100.0, secid: str = "RU000A100001") -> BondQuote:

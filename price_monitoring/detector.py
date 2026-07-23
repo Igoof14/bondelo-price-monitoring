@@ -69,7 +69,7 @@ def detect_anomalies(
         anomalies.append(
             PriceAnomaly(
                 secid=bond.secid,
-                ticker=bond.ticker,
+                isin=bond.isin,
                 name=bond.name,
                 price=quote.price,
                 prev_close=quote.prev_close,

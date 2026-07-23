@@ -76,7 +76,7 @@ class PortfolioBond:
     """Облигация из портфеля пользователя (user_bonds ⋈ moex_bonds)."""
 
     secid: str
-    ticker: str
+    isin: str
     name: str
 
 
@@ -85,7 +85,7 @@ class PriceAnomaly:
     """Аномальное изменение цены облигации, требующее уведомления."""
 
     secid: str
-    ticker: str
+    isin: str
     name: str
     price: float
     prev_close: float
@@ -105,8 +105,7 @@ class PriceAnomaly:
     def to_payload(self) -> dict[str, object]:
         """Представление аномалии для payload задачи Cloud Tasks."""
         return {
-            "secid": self.secid,
-            "ticker": self.ticker,
+            "isin": self.isin,
             "name": self.name,
             "price_pct": round(self.price, 4),
             "prev_close_pct": round(self.prev_close, 4),
