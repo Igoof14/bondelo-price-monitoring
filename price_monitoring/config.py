@@ -20,7 +20,9 @@ class Settings(BaseSettings):
     gcp_project_id: str = "bond-invest"
     cloud_tasks_location: str = "europe-west3"
     cloud_tasks_queue: str = "bot-alert-tasks"
-    alert_target_url: str = "https://34.178.57.246:8080/notify"
+    alert_target_url: str = (
+        "https://bot-772435034855.europe-west1.run.app/events/price-alert"
+    )
     alert_task_sa_email: str = "cloud-tasks-invoker@bond-invest.iam.gserviceaccount.com"
 
     # Режим без побочных эффектов: алерты логируются, задачи не ставятся.
